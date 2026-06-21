@@ -68,5 +68,6 @@ void loop() {
     analogWrite(PIN_Motor_PWMA, 150);
     delay(500);
   }
+  
   delay(50);
 }
