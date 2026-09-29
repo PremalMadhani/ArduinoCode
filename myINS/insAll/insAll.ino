@@ -61,11 +61,12 @@ void loop() {
   phiLPF   = 0.90 * phiLPF   + 0.10 * phiM;
 
   // --- FILTER 2: Complementary Filter ---
-  thetaComp = 0.95 * (thetaComp + (gyr.y()+5) * dt) + 0.05 * thetaM;
+  float gyroBias = 0;
+  thetaComp = 0.95 * (thetaComp + (gyr.y()+gyroBias) * dt) + 0.05 * thetaM;
   phiComp   = 0.95 * (phiComp   + gyr.x() * dt) + 0.05 * phiM;
 
   // --- FILTER 3: 2-State Kalman Filter ---
-  thetaKalman = kalmanPitch.getAngle(thetaM, (gyr.y()+5), dt);
+  thetaKalman = kalmanPitch.getAngle(thetaM, (gyr.y()+gyroBias), dt);
   phiKalman   = kalmanRoll.getAngle(phiM, gyr.x(), dt);
 
   // --- FILTER 4: BNO055 Onboard Hardware Fusion ---
