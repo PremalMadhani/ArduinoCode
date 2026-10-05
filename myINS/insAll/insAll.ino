@@ -3,13 +3,17 @@
 #include <Adafruit_BNO055.h>
 #include <utility/imumaths.h>
 #include <math.h>
-#include <Kalman.h> // Include TKJ Electronics Kalman library
+//#include <Kalman.h> // Include TKJ Electronics Kalman library
+#include "MyInsKalman.h" // My Kalman
+
+MyInsKalman kalmanRoll;
+MyInsKalman kalmanPitch;
 
 Adafruit_BNO055 myIMU = Adafruit_BNO055();
 
 // Initialize Kalman instances
-Kalman kalmanPitch;
-Kalman kalmanRoll;
+//Kalman kalmanPitch;
+//Kalman kalmanRoll;
 
 // Variable definitions
 float thetaM, phiM;            // Raw Accelerometer Pitch & Roll
@@ -61,28 +65,44 @@ void loop() {
   phiLPF   = 0.90 * phiLPF   + 0.10 * phiM;
 
   // --- FILTER 2: Complementary Filter ---
-  float gyroBias = 0;
+  float gyroBias = 20;
   thetaComp = 0.95 * (thetaComp + (gyr.y()+gyroBias) * dt) + 0.05 * thetaM;
-  phiComp   = 0.95 * (phiComp   + gyr.x() * dt) + 0.05 * phiM;
+  phiComp   = 0.95 * (phiComp   + (gyr.x()+gyroBias) * dt) + 0.05 * phiM;
 
   // --- FILTER 3: 2-State Kalman Filter ---
-  thetaKalman = kalmanPitch.getAngle(thetaM, (gyr.y()+gyroBias), dt);
-  phiKalman   = kalmanRoll.getAngle(phiM, gyr.x(), dt);
+  //thetaKalman = kalmanPitch.getAngle(thetaM, (gyr.y()+gyroBias), dt);
+  //phiKalman   = kalmanRoll.getAngle(phiM, gyr.x(), dt);
 
-  // --- FILTER 4: BNO055 Onboard Hardware Fusion ---
+  // --- FILTER 4: My 2 state kalman filter for roll and pitch
+  float phiKalman  = kalmanRoll.predictAndUpdate(phiM, gyr.x()+gyroBias, dt);
+  float thetaKalman = kalmanPitch.predictAndUpdate(thetaM, gyr.y()+gyroBias, dt);
+
+  // --- FILTER 5: BNO055 Onboard Hardware Fusion ---
   imu::Vector<3> bnoEuler = myIMU.getVector(Adafruit_BNO055::VECTOR_EULER);
   float bnoRoll  = -bnoEuler.y();
   float bnoPitch = bnoEuler.z();
 
   // 4. Output values formatted for Arduino Serial Plotter
   // Format: "Label1:Val1,Label2:Val2,..."
-  Serial.print("RawAccelPitch:");     Serial.print(thetaM);      Serial.print(",");
+  Serial.print(timer); Serial.print(",");
+  Serial.print(thetaM);      Serial.print(",");
+  Serial.print(thetaLPF);    Serial.print(",");
+  Serial.print(thetaComp);   Serial.print(",");
+  Serial.print(thetaKalman); Serial.print(",");
+  //Serial.print(bnoPitch); Serial.print(",");
+  Serial.print(phiM);        Serial.print(",");
+  Serial.print(phiLPF);    Serial.print(",");
+  Serial.print(phiComp);   Serial.print(",");
+  Serial.print(phiKalman); Serial.println(",");
+  //Serial.println(bnoRoll); Serial.println(",");
+
+  /*Serial.print("RawAccelPitch:");     Serial.print(thetaM);      Serial.print(",");
   Serial.print("LPFPitch:");          Serial.print(thetaLPF);    Serial.print(",");
   Serial.print("ComplementaryPitch:");Serial.print(thetaComp);   Serial.print(",");
   Serial.print("KalmanPitch:");       Serial.print(thetaKalman); Serial.print(",");
   Serial.print("BNO055_FusedPitch:"); Serial.print(bnoPitch); Serial.println(",");
 
-  /*Serial.print("RawAccelRoll:");     Serial.print(phiM);        Serial.print(",");
+  Serial.print("RawAccelRoll:");     Serial.print(phiM);        Serial.print(",");
   Serial.print("LPFRoll:");          Serial.print(phiLPF);    Serial.print(",");
   Serial.print("ComplementaryRoll:");Serial.print(phiComp);   Serial.print(",");
   Serial.print("KalmanRoll:");       Serial.print(phiKalman); Serial.print(",");
