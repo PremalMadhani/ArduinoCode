@@ -20,6 +20,8 @@ float thetaM, phiM;            // Raw Accelerometer Pitch & Roll
 float thetaLPF = 0, phiLPF = 0;// Low-Pass Filtered values
 float thetaComp = 0, phiComp = 0; // Complementary Filter values
 float thetaKalman = 0, phiKalman = 0; // Kalman Filter values
+float linAccelXfilt = 0;
+float netVelocityX = 0.0, netVelocityY = 0.0, netVelocityZ = 0.0;
 
 unsigned long timer = 0;
 
@@ -41,6 +43,12 @@ void setup() {
 
   kalmanPitch.setAngle(thetaM);
   kalmanRoll.setAngle(phiM);
+
+  linAccelXfilt = acc.x()/9.81;
+
+  netVelocityX = 0.0;
+  netVelocityY = 0.0;
+  netVelocityZ = 0.0;
 
   timer = micros();
 }
@@ -65,7 +73,7 @@ void loop() {
   phiLPF   = 0.90 * phiLPF   + 0.10 * phiM;
 
   // --- FILTER 2: Complementary Filter ---
-  float gyroBias = 20;
+  float gyroBias = 0;
   thetaComp = 0.95 * (thetaComp + (gyr.y()+gyroBias) * dt) + 0.05 * thetaM;
   phiComp   = 0.95 * (phiComp   + (gyr.x()+gyroBias) * dt) + 0.05 * phiM;
 
@@ -82,19 +90,58 @@ void loop() {
   float bnoRoll  = -bnoEuler.y();
   float bnoPitch = bnoEuler.z();
 
+  // Convert Fused Angles to Radians for Trigonometry
+  float thetaRad = thetaComp * DEG_TO_RAD;
+  float phiRad   = phiComp   * DEG_TO_RAD;
+
+  // Calculate Expected Gravity Components on Body Axes (m/s^2)
+  float gx = -9.81 * sin(thetaRad);
+  float gy =  9.81 * sin(phiRad) * cos(thetaRad);
+  float gz =  9.81 * cos(phiRad) * cos(thetaRad);
+
+  float gxlpf = -9.81 * sin(thetaLPF*DEG_TO_RAD);
+  // linear acc from lpf
+  float linAccelXlpf = (acc.x() - gxlpf)/9.81;
+
+  linAccelXfilt = 0.95*linAccelXfilt+0.05*acc.x()/9.81;
+
+  // ISOLATE TRUE LINEAR ACCELERATION (Feed these to ML model)
+  float linAccelX = (acc.x() - gx)/9.81; // Pure Left/Right dynamic acceleration
+  float linAccelY = (acc.y() - gy)/9.81; // Pure Forward/Backward dynamic acceleration
+  float linAccelZ = (acc.z() - gz)/9.81; // Pure Up/Down dynamic acceleration
+
+  // Update Leaky Integrator
+  netVelocityX = 0.95 * netVelocityX + (linAccelX * dt);
+  netVelocityY = 0.95 * netVelocityY + (linAccelY * dt);
+  netVelocityZ = 0.95 * netVelocityZ + (linAccelZ * dt);
+
+  // 2. Active Re-Zeroing (Guardrail)
+  // If dynamic acceleration is practically zero (resting hand), accelerate decay to zero
+  if (abs(linAccelX) < 0.05) { netVelocityX *= 0.80; if (abs(netVelocityX) < 0.001) netVelocityX = 0.0; }
+  if (abs(linAccelY) < 0.05) { netVelocityY *= 0.80; if (abs(netVelocityY) < 0.001) netVelocityY = 0.0; }
+  if (abs(linAccelZ) < 0.05) { netVelocityZ *= 0.80; if (abs(netVelocityZ) < 0.001) netVelocityZ = 0.0; }
+
   // 4. Output values formatted for Arduino Serial Plotter
   // Format: "Label1:Val1,Label2:Val2,..."
   Serial.print(timer); Serial.print(",");
-  Serial.print(thetaM);      Serial.print(",");
+  /*Serial.print(thetaM);      Serial.print(",");
   Serial.print(thetaLPF);    Serial.print(",");
   Serial.print(thetaComp);   Serial.print(",");
-  Serial.print(thetaKalman); Serial.print(",");
+  Serial.print(thetaKalman); Serial.print(",");*/
   //Serial.print(bnoPitch); Serial.print(",");
   Serial.print(phiM);        Serial.print(",");
   Serial.print(phiLPF);    Serial.print(",");
   Serial.print(phiComp);   Serial.print(",");
-  Serial.print(phiKalman); Serial.println(",");
+  Serial.print(phiKalman); Serial.print(",");
   //Serial.println(bnoRoll); Serial.println(",");
+
+  // Serial output for debugging/plotting linear motion
+  Serial.print(linAccelXlpf); Serial.print(",");
+  Serial.print(linAccelX); Serial.print(",");
+  Serial.print(linAccelY); Serial.print(",");
+  Serial.print(linAccelZ); Serial.print(",");
+  Serial.print(linAccelXfilt); Serial.print(",");
+  Serial.print(netVelocityX); Serial.println(",");
 
   /*Serial.print("RawAccelPitch:");     Serial.print(thetaM);      Serial.print(",");
   Serial.print("LPFPitch:");          Serial.print(thetaLPF);    Serial.print(",");
