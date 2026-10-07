@@ -20,7 +20,6 @@ float thetaM, phiM;            // Raw Accelerometer Pitch & Roll
 float thetaLPF = 0, phiLPF = 0;// Low-Pass Filtered values
 float thetaComp = 0, phiComp = 0; // Complementary Filter values
 float thetaKalman = 0, phiKalman = 0; // Kalman Filter values
-float linAccelX_filt = 0.0, linAccelY_filt = 0.0, linAccelZ_filt = 0.0;
 
 unsigned long timer = 0;
 int lockoutTimer = 0;
@@ -103,17 +102,6 @@ void loop() {
   float linAccelY = (acc.y() - gy)/9.81; // Pure Forward/Backward dynamic acceleration
   float linAccelZ = (acc.z() - gz)/9.81; // Pure Up/Down dynamic acceleration
 
-  // Low-Pass Filter (EMA) to attenuate motor/hand vibration noise
-  // (alpha = 0.30 gives sharp response with minimal ~30ms lag)
-  linAccelX_filt = 0.70 * linAccelX_filt + 0.30 * linAccelX;
-  linAccelY_filt = 0.70 * linAccelY_filt + 0.30 * linAccelY;
-  linAccelZ_filt = 0.70 * linAccelZ_filt + 0.30 * linAccelZ;
-
-  // 7. Apply Baseline Noise Deadband (Clamps resting sensor jitter to exactly 0.0)
-  if (abs(linAccelX_filt) < 0.04) linAccelX_filt = 0.0;
-  if (abs(linAccelY_filt) < 0.04) linAccelY_filt = 0.0;
-  if (abs(linAccelZ_filt) < 0.06) linAccelZ_filt = 0.0; // Slightly higher threshold for Z
-
   // Refractory Lockout Handling for Classification Logic
   bool readyForNewGesture = true;
   if (lockoutTimer > 0) {
@@ -123,27 +111,27 @@ void loop() {
 
   // MOTION DETECTION LOGIC USING PURE ACCELERATION ---
   if (readyForNewGesture) {
-    if (linAccelX_filt > 0.15) {
+    if (linAccelX > 0.15) {
       Serial.println("MOTION DETECTED: RIGHT (+X)");
       lockoutTimer = LOCKOUT_SAMPLES; // Lockout for 250 ms to absorb deceleration phase
     } 
-    else if (linAccelX_filt < -0.15) {
+    else if (linAccelX < -0.2) {
       Serial.println("MOTION DETECTED: LEFT (-X)");
       lockoutTimer = LOCKOUT_SAMPLES;
     }
-    else if (linAccelY_filt > 0.15) {
+    else if (linAccelY > 0.2) {
       Serial.println("MOTION DETECTED: FORWARD (+Y)");
       lockoutTimer = LOCKOUT_SAMPLES;
     }
-    else if (linAccelY_filt < -0.15) {
+    else if (linAccelY < -0.2) {
       Serial.println("MOTION DETECTED: BACKWARD (-Y)");
       lockoutTimer = LOCKOUT_SAMPLES;
     }
-    else if (linAccelZ_filt > 0.20) {
+    else if (linAccelZ > 0.2) {
       Serial.println("MOTION DETECTED: UP (+Z)");
       lockoutTimer = LOCKOUT_SAMPLES;
     }
-    else if (linAccelZ_filt < -0.20) {
+    else if (linAccelZ < -0.2) {
       Serial.println("MOTION DETECTED: DOWN (-Z)");
       lockoutTimer = LOCKOUT_SAMPLES;
     }
@@ -168,9 +156,6 @@ void loop() {
   Serial.print(linAccelX); Serial.print(",");
   Serial.print(linAccelY); Serial.print(",");
   Serial.print(linAccelZ); Serial.print(",");
-  Serial.print(linAccelX_filt); Serial.print(",");
-  Serial.print(linAccelY_filt); Serial.print(",");
-  Serial.print(linAccelZ_filt); Serial.print(",");
   Serial.print(readyForNewGesture ? 1:0); Serial.println(",");
 
   /*Serial.print("RawAccelPitch:");     Serial.print(thetaM);      Serial.print(",");
