@@ -71,6 +71,8 @@ After each detected event there is a 250 ms lockout (25 samples). Without it, th
 
 **Use with ML:** The complementary filter output replaces the LPF output as the feature input to the drone motion model.
 
+Video link https://youtube.com/shorts/QBpUvBzy3HY
+
 ---
 
 ## Project 2: GPS + INS navigation (`myGPS`)
