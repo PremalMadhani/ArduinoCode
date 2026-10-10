@@ -51,7 +51,7 @@ Self-directed projects by Priyan: IMU orientation filtering, gesture/motion dete
 
 ![Jerk and vibration](images/ins_04_jerk_vibration.png)
 
-**4. Linear acceleration.** Gravity is computed from the filtered tilt and subtracted from the accelerometer to get linear acceleration. With the LPF tilt (blue), tilting the board leaks into the linear-acceleration estimate. With the complementary tilt (red), tilting is mostly removed, and real translation stands out clearly.
+**4. Linear acceleration.** Gravity is computed from the filtered tilt and subtracted from the accelerometer to get linear acceleration. With the LPF tilt (blue), tilting the board leaks into the linear-acceleration estimate. With the complementary tilt (light blue), tilting is mostly removed, and real translation stands out clearly.
 
 ![Linear acceleration in the X-Y plane](images/ins_05_linear_accel_xy.png)
 
