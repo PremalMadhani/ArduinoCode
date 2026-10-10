@@ -1,6 +1,6 @@
-# Arduino Sensor Fusion Projects
+# Arduino based Sensor Fusion Projects
 
-Self-directed projects by Priyan: IMU orientation filtering, gesture/motion detection, and GPS + INS navigation using an Arduino and a Bosch BNO055 9-DOF IMU. Built independently, outside of any school club, to learn how sensing, estimation, and control fit together.
+Self-directed projects by Priyan: IMU orientation filtering, gesture/motion detection, and GPS + INS navigation using an Arduino and a Bosch BNO055 9-DOF IMU. Built independently, outside of any school club, to learn how sensing, estimation, and control fit together. 
 
 ## Repository map
 
