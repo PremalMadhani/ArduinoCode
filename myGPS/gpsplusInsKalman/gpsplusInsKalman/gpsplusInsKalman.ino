@@ -83,11 +83,24 @@ void loop() {
 
     imu::Vector<3> linAcc = myIMU.getVector(Adafruit_BNO055::VECTOR_LINEARACCEL);
     imu::Vector<3> euler = myIMU.getVector(Adafruit_BNO055::VECTOR_EULER);
-    float headingRad = euler.x() * M_PI / 180.0;
+    /*float headingRad = euler.x() * M_PI / 180.0;
 
     // Convert Body Accel to Earth (East, North) Frame
     float accEast  = linAcc.x() * cos(headingRad) + linAcc.y() * sin(headingRad);
-    float accNorth = -linAcc.x() * sin(headingRad) + linAcc.y() * cos(headingRad);
+    float accNorth = -linAcc.x() * sin(headingRad) + linAcc.y() * cos(headingRad);*/
+
+    float r = euler.z() * M_PI / 180.0; // Roll (radians)
+    float p = euler.y() * M_PI / 180.0; // Pitch (radians)
+    float y = euler.x() * M_PI / 180.0; // Yaw / Heading (radians)
+
+    // Full 3D transformation to Earth ENU Frame
+    float accEast  = linAcc.x() * (cos(y)*cos(p)) 
+                  + linAcc.y() * (cos(y)*sin(p)*sin(r) - sin(y)*cos(r)) 
+                  + linAcc.z() * (cos(y)*sin(p)*cos(r) + sin(y)*sin(r));
+
+    float accNorth = linAcc.x() * (sin(y)*cos(p)) 
+                  + linAcc.y() * (sin(y)*sin(p)*sin(r) + cos(y)*cos(r)) 
+                  + linAcc.z() * (sin(y)*sin(p)*cos(r) - cos(y)*sin(r));
 
     // Apply Noise Threshold / Deadband
     if (abs(accEast) < 0.05)  accEast = 0.0;
@@ -113,8 +126,8 @@ void loop() {
     if (accEast == 0.0)  kalmanX.applyZUPT();
     if (accNorth == 0.0) kalmanY.applyZUPT();
 
-    if (accEast == 0.0)  velX_Comp *= 0.1;
-    if (accNorth == 0.0) velY_Comp *= 0.1;
+    if (accEast == 0.0)  velX_Comp *= 0.95;
+    if (accNorth == 0.0) velY_Comp *= 0.95;
 
     // --- KALMAN UPDATE STEP (When GPS Data Updates) ---
     if (homeSet && gps.location.isUpdated() && !simBlackout) {
