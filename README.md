@@ -88,7 +88,7 @@ Video link https://youtube.com/shorts/QBpUvBzy3HY
 
 ### Results
 
-**1. Filling GPS gaps on a loop.** The GPS fixes (blue) have gaps, marked by the arrows. The complementary GPS+INS estimate (cyan) gives a continuous, smooth track through those gaps, while INS-only (red) runs away from the loop.
+**1. Filling GPS gaps on a loop.** The data was collected while driving around the block with the setup in the car. The GPS fixes (blue) have gaps, marked by the arrows. The complementary GPS+INS estimate (cyan) gives a continuous, smooth track through those gaps, while INS-only (red) runs away from the loop.
 
 ![GPS outages filled by GPS+INS complementary filter](images/gpsins_07_gap_fill_complementary.png)
 
