@@ -51,9 +51,9 @@ Self-directed projects by Priyan: IMU orientation filtering, gesture/motion dete
 
 ![Jerk and vibration](images/ins_04_jerk_vibration.png)
 
-**4. Linear acceleration.** Gravity is computed from the filtered tilt and subtracted from the accelerometer to get linear acceleration. With the LPF tilt (blue), tilting the board leaks into the linear-acceleration estimate. With the complementary tilt (light blue), tilting is mostly removed, and real translation stands out clearly.
+**4. Shaking in the X-Y plane.** When the sensor is shaken side to side, the accelerometer-only angle (dark blue) swings about ±30°, the LPF (red) about ±15°, and the complementary filter (light blue) much less, roughly ±5 to 10°.
 
-![Linear acceleration in the X-Y plane](images/ins_05_linear_accel_xy.png)
+![Shaking in the X-Y plane](images/ins_05_linear_accel_xy.png)
 
 **5. Kalman filter comparison (exploratory).** With a gyro bias, the complementary filter's angle can sit offset from the truth (cyan, about 7° high here), because it trusts the integrated gyro over short times. The Kalman filter estimates the bias and stays with the accelerometer/LPF trend.
 
@@ -61,7 +61,7 @@ Self-directed projects by Priyan: IMU orientation filtering, gesture/motion dete
 ![Kalman with gyro bias and pitch motion](images/ins_07_kalman_gyro_bias_pitch.png)
 ![Kalman with vibration and gyro bias](images/ins_08_kalman_vibration_bias.png)
 
-**6. Gesture detection.** Thresholds on linear acceleration (about ±0.15–0.2 g per axis) classify left/right, forward/backward, and up/down motion. The X signal from the complementary filter stays robust to tilt and has no lag.
+**6. Gesture detection.** Thresholds on linear acceleration (about ±0.15–0.2 g per axis) classify left/right, forward/backward, and up/down motion. Linear acceleration is computed by subtracting gravity, using the filtered tilt. In the plot below, the blue line uses the LPF tilt and the red line uses the complementary tilt. Tilting the board (before about 341 s) leaks into the blue line as bumps of 0.3 to 0.5 g but barely into red, so the X signal from the complementary filter stays robust to tilt and has no lag.
 
 ![Left/right gestures vs tilt](images/ins_09_gesture_left_right.png)
 
