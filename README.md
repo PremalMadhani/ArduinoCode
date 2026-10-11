@@ -84,23 +84,17 @@ Video link https://youtube.com/shorts/QBpUvBzy3HY
 - **GPS (about 1 Hz):** Convert lat/lon to local meters around the first fix (flat-earth approximation). Noisy and sometimes missing, but doesn't drift.
 - **Complementary fusion:** 90% INS / 10% GPS for position on each GPS update, with velocity damping. Trust INS short-term, GPS long-term.
 - **Simulated outage:** In `gpsplusInsKalman`, sending `b` over serial ignores GPS for 10 s.
+- **Kalman filter (exploratory):** `gpsplusInsKalman` also contains an early Kalman filter running alongside the complementary filter. It has not been tuned or evaluated yet, so the results below use the complementary filter only.
 
 ### Results
 
-**1. INS-only drifts; fusion bounds the error.** In a short walk, INS alone (red) wanders away from GPS (blue). The complementary GPS+INS track (cyan) stays near it.
+**1. Filling GPS gaps on a loop.** The GPS fixes (blue) have gaps, marked by the arrows. The complementary GPS+INS estimate (cyan) gives a continuous, smooth track through those gaps, while INS-only (red) runs away from the loop.
 
-![INS vs GPS vs complementary](images/gpsins_01_complementary_drift.png)
-![Drift with the Kalman filter](images/gpsins_02_kalman_drift.png)
+![GPS outages filled by GPS+INS complementary filter](images/gpsins_07_gap_fill_complementary.png)
 
-**2. Filling GPS gaps on a loop.** The fused estimate (cyan) gives a continuous, smooth track where GPS fixes (blue) have gaps (arrows), while INS-only (red) runs off the loop entirely.
+**2. INS-only drift over a longer run.** Zoomed out, the INS-only track drifts to more than 1,000 m from the start, while the loop covers only about 400 m. Integrating acceleration twice makes position error grow quickly without GPS corrections. The fused estimate stays with the loop.
 
-![GPS outages filled by GPS+INS](images/gpsins_03_gap_fill_a.png)
-![Gap filling, detail](images/gpsins_03_gap_fill_b.png)
-![Outage filled by complementary filter](images/gpsins_04_outage_complementary.png)
-
-**3. Complementary vs Kalman.** Both fused solutions follow the loop. The complementary track is smoother, while the Kalman points follow the GPS more closely but are more scattered. Neither has been tuned systematically yet.
-
-![Complementary vs Kalman](images/gpsins_05_comp_vs_kalman.png)
+![INS-only drift vs GPS+INS, zoomed out](images/gpsins_06_ins_drift_zoomed_out.png)
 
 ### Limitations (what I learned)
 - **Fixed gains.** The 90/10 blend can't adapt to changing measurement noise or dynamics, so a position offset remains (visible in the loop plots) and high-dynamic maneuvers hurt.
